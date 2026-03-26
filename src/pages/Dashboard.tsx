@@ -1,212 +1,286 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
+import { useTranslation } from 'react-i18next';
 import { 
   Activity, 
+  TrendingUp, 
+  Calendar, 
   Target, 
   Zap, 
-  TrendingUp,
-  ArrowUpRight,
   ShieldCheck,
-  BrainCircuit,
-  ChevronRight,
-  PhoneCall
+  ArrowUpRight,
+  Info,
+  AlertCircle,
+  Plus,
+  Edit2,
+  Trash2,
+  Check,
+  X
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 
 const Dashboard = () => {
-  const { profile, milestones } = useAppContext();
-  const navigate = useNavigate();
+  const { profile, milestones, addMilestone, updateMilestone, deleteMilestone } = useAppContext();
+  const { t } = useTranslation();
+  const [isAdding, setIsAdding] = useState(false);
+  const [newGoal, setNewGoal] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
 
   const stats = [
-    { label: 'Recovery Score', value: '92%', icon: ShieldCheck, color: 'text-rehab-cyan', glow: 'neon-glow-cyan' },
-    { label: 'Avg. Accuracy', value: '88%', icon: Target, color: 'text-rehab-emerald', glow: 'neon-glow-green' },
-    { label: 'Strength Index', value: '65', icon: Zap, color: 'text-rehab-blue', glow: 'neon-glow-cyan' },
+    { label: 'Recovery Progress', value: '62%', icon: TrendingUp, color: 'teal', trend: '+4.2%' },
+    { label: 'Avg. Accuracy', value: '88.4%', icon: Target, color: 'indigo', trend: '+1.5%' },
+    { label: 'Total Sessions', value: '24', icon: Activity, color: 'amber', trend: '+2' },
+    { label: 'Next Milestone', value: '12 Days', icon: Calendar, color: 'rose', trend: 'On Track' },
   ];
 
-  const completedMilestones = milestones.filter(m => m.completed).length;
+  const handleAddGoal = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newGoal.trim()) {
+      addMilestone(newGoal.trim());
+      setNewGoal('');
+      setIsAdding(false);
+    }
+  };
+
+  const handleStartEdit = (id: string, title: string) => {
+    setEditingId(id);
+    setEditValue(title);
+  };
+
+  const handleSaveEdit = (id: string) => {
+    if (editValue.trim()) {
+      updateMilestone(id, { title: editValue.trim() });
+      setEditingId(null);
+    }
+  };
+
   const totalMilestones = milestones.length;
-  const completionPercentage = totalMilestones > 0 ? Math.round((completedMilestones / totalMilestones) * 100) : 75;
+  const completedMilestones = milestones.filter(m => m.completed).length;
+  const completionPercentage = totalMilestones > 0 ? Math.round((completedMilestones / totalMilestones) * 100) : 0;
 
   return (
-    <div className="relative min-h-screen p-6 md:p-10 space-y-10">
-      <div className="anatomy-bg" />
-      
-      {/* Header */}
+    <div className="p-8 space-y-10 font-sans">
+      {/* Welcome Section */}
       <header className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
-            Welcome, <span className="text-rehab-cyan text-glow-cyan">{profile?.name || 'Priya'}</span> 👋
-          </h1>
-          <p className="text-white/40 font-medium text-sm uppercase tracking-[0.2em]">Smart Physiotherapy Assistant</p>
+        <div>
+          <h1 className="text-3xl font-semibold text-white tracking-tight font-display">Clinical Overview</h1>
+          <p className="text-white/40 font-medium mt-1 text-sm font-sans uppercase tracking-widest">Diagnostic & Recovery Command Center</p>
         </div>
-        <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-rehab-cyan neon-glow-cyan">
-          <img 
-            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.name || 'Priya'}`} 
-            alt="Avatar"
-            className="w-full h-full object-cover bg-slate-800"
-          />
+        <div className="flex items-center gap-4">
+          <div className="bg-white/5 p-4 rounded-2xl border border-white/10 flex items-center gap-4">
+            <div className="w-10 h-10 bg-teal-500/10 rounded-xl flex items-center justify-center text-teal-400">
+              <Zap size={20} />
+            </div>
+            <div>
+              <div className="text-[10px] font-semibold text-white/40 uppercase tracking-widest font-sans">System Status</div>
+              <div className="text-sm font-semibold text-teal-400 font-display">Operational</div>
+            </div>
+          </div>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Daily Goal Circular Progress */}
-        <div className="lg:col-span-4 glass-card flex flex-col items-center justify-center space-y-6 py-10">
-          <h3 className="text-sm font-bold text-white/40 uppercase tracking-widest">Daily Goal</h3>
-          <div className="relative w-48 h-48">
-            <svg className="w-full h-full transform -rotate-90">
-              <circle
-                cx="96"
-                cy="96"
-                r="80"
-                stroke="currentColor"
-                strokeWidth="12"
-                fill="transparent"
-                className="text-white/5"
-              />
-              <motion.circle
-                cx="96"
-                cy="96"
-                r="80"
-                stroke="currentColor"
-                strokeWidth="12"
-                fill="transparent"
-                strokeDasharray={502.6}
-                initial={{ strokeDashoffset: 502.6 }}
-                animate={{ strokeDashoffset: 502.6 - (502.6 * completionPercentage) / 100 }}
-                transition={{ duration: 1.5, ease: "easeOut" }}
-                className="text-rehab-cyan"
-                strokeLinecap="round"
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-5xl font-bold text-white text-glow-cyan">{completionPercentage}%</span>
-              <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Completed</span>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((stat, i) => (
+          <motion.div 
+            key={i}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+            className="bg-white/5 backdrop-blur-xl p-6 rounded-[2.5rem] border border-white/10 hover:bg-white/10 transition-all group cursor-pointer shadow-xl"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className={`w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-teal-400 group-hover:bg-teal-500 group-hover:text-slate-950 transition-all`}>
+                <stat.icon size={24} />
+              </div>
+              <div className={`flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest ${stat.trend.startsWith('+') ? 'text-emerald-400' : 'text-white/40'}`}>
+                {stat.trend.startsWith('+') ? <ArrowUpRight size={14} /> : null}
+                {stat.trend}
+              </div>
             </div>
+            <div className="space-y-1">
+              <div className="text-xs font-semibold text-white/40 uppercase tracking-widest font-sans">{stat.label}</div>
+              <div className="text-3xl font-semibold text-white tracking-tight font-display">{stat.value}</div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Interactive Milestone System */}
+      <div className="bg-white/5 backdrop-blur-xl p-10 rounded-[2.5rem] border border-white/10 shadow-2xl space-y-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-xl font-semibold text-white font-display">Set Your Rehabilitation Goals</h3>
+            <p className="text-[10px] text-white/40 font-semibold uppercase tracking-widest font-sans mt-1">Personalized recovery roadmap</p>
           </div>
-          <p className="text-xs text-white/60 text-center px-6 leading-relaxed">
-            You're on track! Complete 2 more sessions to reach your daily target.
-          </p>
+          <button 
+            onClick={() => setIsAdding(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-teal-500 text-slate-950 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-teal-400 transition-all shadow-lg shadow-teal-500/20"
+          >
+            <Plus size={16} />
+            Add Goal
+          </button>
         </div>
 
-        {/* Metrics Cards */}
-        <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-          {stats.map((stat, i) => (
-            <motion.div 
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className={`glass-card flex flex-col justify-between group ${stat.glow}`}
+        <AnimatePresence>
+          {isAdding && (
+            <motion.form 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              onSubmit={handleAddGoal}
+              className="bg-white/5 p-6 rounded-3xl border border-white/10 flex items-center gap-4"
             >
-              <div className="flex items-center justify-between">
-                <div className={`w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center ${stat.color}`}>
-                  <stat.icon size={24} />
-                </div>
-                <div className="text-rehab-emerald flex items-center gap-1 text-[10px] font-bold">
-                  <ArrowUpRight size={14} />
-                  +2.4%
-                </div>
+              <input 
+                autoFocus
+                type="text"
+                value={newGoal}
+                onChange={(e) => setNewGoal(e.target.value)}
+                placeholder="e.g., Achieve 90° knee flexion"
+                className="flex-1 bg-transparent border-none text-white placeholder:text-white/20 focus:ring-0 font-sans"
+              />
+              <div className="flex items-center gap-2">
+                <button 
+                  type="button"
+                  onClick={() => setIsAdding(false)}
+                  className="p-2 text-white/40 hover:text-white transition-colors"
+                >
+                  <X size={20} />
+                </button>
+                <button 
+                  type="submit"
+                  className="p-2 bg-teal-500 text-slate-950 rounded-lg hover:bg-teal-400 transition-colors"
+                >
+                  <Check size={20} />
+                </button>
               </div>
-              <div className="mt-8 space-y-1">
-                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">{stat.label}</p>
-                <h4 className="text-4xl font-bold text-white tracking-tighter">{stat.value}</h4>
-              </div>
-            </motion.div>
-          ))}
-
-          {/* Large Activity Card */}
-          <div className="md:col-span-3 glass-card space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-rehab-teal/20 flex items-center justify-center text-rehab-teal">
-                  <Activity size={20} />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-white">Recent Activity</h3>
-                  <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Neural Movement Analysis</p>
-                </div>
-              </div>
-              <button 
-                onClick={() => navigate('/history')}
-                className="text-xs font-bold text-rehab-cyan uppercase tracking-widest hover:text-white transition-colors flex items-center gap-2"
+            </motion.form>
+          )}
+        </AnimatePresence>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <AnimatePresence mode="popLayout">
+            {milestones.map((m) => (
+              <motion.div 
+                layout
+                key={m.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className={`p-6 rounded-3xl border transition-all relative group ${
+                  m.completed 
+                    ? 'bg-emerald-500/10 border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.1)]' 
+                    : 'bg-white/5 border-white/10 hover:border-teal-500/30'
+                }`}
               >
-                View All <ChevronRight size={14} />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              {[1, 2].map((_, i) => (
-                <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center text-rehab-cyan">
-                      <BrainCircuit size={24} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-white">Arm Rotation Session</p>
-                      <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Completed • 15 mins ago</p>
+                <div className="flex flex-col h-full justify-between gap-4">
+                  <div className="flex items-start justify-between gap-2">
+                    {editingId === m.id ? (
+                      <input 
+                        autoFocus
+                        type="text"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onBlur={() => handleSaveEdit(m.id)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit(m.id)}
+                        className="bg-transparent border-none text-white focus:ring-0 p-0 font-semibold font-display w-full"
+                      />
+                    ) : (
+                      <div className={`font-semibold font-display transition-colors ${m.completed ? 'text-emerald-400 line-through opacity-60' : 'text-white'}`}>
+                        {m.title}
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={() => handleStartEdit(m.id, m.title)}
+                        className="p-1.5 text-white/40 hover:text-white transition-colors"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      <button 
+                        onClick={() => deleteMilestone(m.id)}
+                        className="p-1.5 text-white/40 hover:text-rose-400 transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-rehab-emerald">94% Accuracy</p>
-                    <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">15 Reps</p>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => updateMilestone(m.id, { completed: !m.completed })}
+                        className={`w-6 h-6 rounded-lg border flex items-center justify-center transition-all ${
+                          m.completed 
+                            ? 'bg-emerald-500 border-emerald-500 text-slate-950' 
+                            : 'border-white/20 text-transparent hover:border-teal-500'
+                        }`}
+                      >
+                        <Check size={14} />
+                      </button>
+                      <span className={`text-[10px] font-bold uppercase tracking-widest ${m.completed ? 'text-emerald-400' : 'text-white/40'}`}>
+                        {m.completed ? 'Completed' : 'In Progress'}
+                      </span>
+                    </div>
+                    {m.progress !== undefined && !m.completed && (
+                      <span className="text-[10px] font-mono text-teal-400">{m.progress}%</span>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+        
+        <div className="pt-8 flex items-center justify-center gap-4">
+          <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${completionPercentage}%` }}
+              className="h-full bg-teal-500 shadow-[0_0_10px_rgba(20,184,166,0.5)]" 
+            />
           </div>
+          <span className="text-xs font-semibold text-teal-400 font-mono tracking-tighter">
+            {completionPercentage}% TOTAL COMPLETION
+          </span>
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="flex flex-wrap gap-4">
-        <button 
-          onClick={() => navigate('/exercise')}
-          className="flex-1 min-w-[200px] glass p-6 rounded-[2rem] flex items-center justify-between group hover:bg-rehab-teal transition-all duration-500"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-rehab-teal/20 flex items-center justify-center text-rehab-teal group-hover:bg-white/20 group-hover:text-white transition-all">
-              <TrendingUp size={24} />
-            </div>
-            <div className="text-left">
-              <p className="text-sm font-bold text-white">Start New Session</p>
-              <p className="text-[10px] text-white/40 group-hover:text-white/60 font-bold uppercase tracking-widest">AI-Guided Exercise</p>
-            </div>
+      {/* Usage Guidelines & Safety Instructions */}
+      <div className="bg-white/[0.07] backdrop-blur-xl p-10 rounded-[2.5rem] border border-white/10 shadow-2xl space-y-8">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-teal-500/10 rounded-2xl flex items-center justify-center text-teal-400 shadow-inner">
+            <Info size={24} />
           </div>
-          <ChevronRight size={20} className="text-white/20 group-hover:text-white group-hover:translate-x-1 transition-all" />
-        </button>
-        
-        <button 
-          onClick={() => navigate('/history')}
-          className="flex-1 min-w-[200px] glass p-6 rounded-[2rem] flex items-center justify-between group hover:bg-rehab-blue transition-all duration-500"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-rehab-blue/20 flex items-center justify-center text-rehab-blue group-hover:bg-white/20 group-hover:text-white transition-all">
-              <Activity size={24} />
-            </div>
-            <div className="text-left">
-              <p className="text-sm font-bold text-white">View Analytics</p>
-              <p className="text-[10px] text-white/40 group-hover:text-white/60 font-bold uppercase tracking-widest">Progress Insights</p>
-            </div>
+          <div>
+            <h3 className="text-xl font-semibold text-white font-display">Usage Guidelines & Safety Instructions</h3>
+            <p className="text-[10px] text-white/40 font-semibold uppercase tracking-widest font-sans">Essential protocols for safe rehabilitation</p>
           </div>
-          <ChevronRight size={20} className="text-white/20 group-hover:text-white group-hover:translate-x-1 transition-all" />
-        </button>
+        </div>
 
-        <button 
-          onClick={() => navigate('/emergency')}
-          className="flex-1 min-w-[200px] glass p-6 rounded-[2rem] flex items-center justify-between group hover:bg-rose-500 transition-all duration-500"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-rose-500/20 flex items-center justify-center text-rose-500 group-hover:bg-white/20 group-hover:text-white transition-all">
-              <PhoneCall size={24} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-teal-400">
+              <Zap size={16} />
+              <span className="text-[10px] font-bold uppercase tracking-widest font-sans">How to Use</span>
             </div>
-            <div className="text-left">
-              <p className="text-sm font-bold text-white">Emergency Support</p>
-              <p className="text-[10px] text-white/40 group-hover:text-white/60 font-bold uppercase tracking-widest">Nearby Medical Centers</p>
-            </div>
+            <p className="text-white/70 leading-relaxed font-sans text-sm">
+              To ensure optimal rehabilitation outcomes, position yourself within the camera frame so that your full body is clearly visible. Carefully follow the on-screen exercise demonstrations and perform each movement in a slow, controlled manner. Pay close attention to the real-time AI feedback and adjust your posture and joint alignment accordingly. Consistent daily participation in prescribed sessions is essential to track progress accurately and achieve steady recovery.
+            </p>
           </div>
-          <ChevronRight size={20} className="text-white/20 group-hover:text-white group-hover:translate-x-1 transition-all" />
-        </button>
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-rose-400">
+              <AlertCircle size={16} />
+              <span className="text-[10px] font-bold uppercase tracking-widest font-sans">Safety Guidelines</span>
+            </div>
+            <p className="text-white/70 leading-relaxed font-sans text-sm">
+              Do not continue any exercise if you experience sharp pain, discomfort, or instability. Avoid overextending joints beyond your natural range of motion, and ensure that your surroundings are safe and free from obstacles. Always perform exercises on a stable, non-slippery surface. It is strongly recommended to consult your physiotherapist before attempting advanced movements or modifying your rehabilitation routine.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

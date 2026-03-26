@@ -1,6 +1,6 @@
 {
-  "name": "RehabAI – Smart Physiotherapy Assistant",
-  "description": "A modern, futuristic smart physiotherapy platform with real-time AI tracking, recovery intelligence, and emergency care network.",
+  "name": "RehabIris",
+  "description": "AI-Based Tele-Rehabilitation System with 3D Injury Visualization, Voice Coaching, and Smart Recovery Intelligence",
   "requestFramePermissions": [
     "camera",
     "microphone",

@@ -19,11 +19,7 @@ import {
   Upload,
   X,
   CheckCircle2,
-  AlertTriangle,
-  Mic,
-  RotateCcw,
-  ChevronLeft,
-  Info
+  AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as Pose from '@mediapipe/pose';
@@ -52,7 +48,7 @@ const EXERCISES: ExerciseData[] = [
     duration: '60s',
     reps: 15,
     benefit: 'Increases synovial fluid flow & shoulder mobility',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-woman-doing-arm-rotations-in-a-gym-42654-large.mp4',
+    videoUrl: 'https://v.ftcdn.net/04/85/63/37/700_F_485633714_8X6R8X8X8X8X8X8X8X8X8X8X8X8X8X8X_ST.mp4', // Placeholder for arm rotation
     icon: RotateCw
   },
   {
@@ -62,7 +58,7 @@ const EXERCISES: ExerciseData[] = [
     duration: '60s',
     reps: 15,
     benefit: 'Improves wrist flexibility & reduces joint stiffness',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-woman-doing-wrist-stretches-in-a-gym-42655-large.mp4',
+    videoUrl: 'https://v.ftcdn.net/05/12/34/56/700_F_512345678_8X6R8X8X8X8X8X8X8X8X8X8X8X8X8X8X_ST.mp4', // Placeholder for wrist rotation
     icon: Activity
   }
 ];
@@ -91,28 +87,16 @@ const Exercise = () => {
   const lastRepTime = useRef<number>(0);
   const voiceTriggered = useRef<{ [key: number]: boolean }>({});
 
-  const [aiLabels, setAiLabels] = useState<string[]>([]);
-  const [isVoiceActive, setIsVoiceActive] = useState(false);
-
   // Voice Feedback
   const speak = useCallback((text: string) => {
-    if ('speechSynthesis' in window && isVoiceActive) {
+    if ('speechSynthesis' in window) {
+      // Cancel any ongoing speech before starting new one
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = profile?.language === 'hi' ? 'hi-IN' : profile?.language === 'ta' ? 'ta-IN' : 'en-US';
+      utterance.lang = profile?.language === 'hi' ? 'hi-IN' : 'en-US';
       window.speechSynthesis.speak(utterance);
     }
-  }, [profile?.language, isVoiceActive]);
-
-  useEffect(() => {
-    if (isActive) {
-      setIsVoiceActive(true);
-      speak("Start with the exercise.");
-    } else {
-      setIsVoiceActive(false);
-      window.speechSynthesis.cancel();
-    }
-  }, [isActive, speak]);
+  }, [profile?.language]);
 
   // Cleanup voice on unmount or when leaving exercise
   useEffect(() => {
@@ -290,15 +274,6 @@ const Exercise = () => {
     
     setAccuracy(currentAccuracy);
 
-    const labels: string[] = [];
-    if (currentAccuracy > 80) {
-      labels.push(selectedExercise?.id === 'arm' ? 'Shoulder Safe' : 'Wrist Aligned');
-    } else {
-      labels.push('Adjust Position');
-      setFeedback('Ensure your joints are visible and moving');
-    }
-    setAiLabels(labels);
-
     if (currentAccuracy < 60) {
       setFeedback('Adjust your posture and keep moving');
       // Safety Governor: Trigger voice if accuracy is low
@@ -317,14 +292,6 @@ const Exercise = () => {
       // Precise voice feedback for reps
       const repMsg = profile?.language === 'hi' ? `${nextReps} रेप्स पूरे हुए` : `Repetition ${nextReps} completed`;
       speak(repMsg);
-
-      // Check for completion
-      if (nextReps >= (selectedExercise?.reps || 15)) {
-        setIsActive(false);
-        setShowSummary(true);
-        const completionMsg = profile?.language === 'hi' ? "अभ्यास पूरा हुआ। बहुत बढ़िया!" : "Exercise completed. Great job!";
-        speak(completionMsg);
-      }
     }
 
     // Smoothness Index: Velocity tracking (change in position)
@@ -526,45 +493,18 @@ const Exercise = () => {
             </div>
 
             {/* AI Feedback Overlay */}
-            <div className="absolute top-8 left-8 flex flex-col gap-4">
-              <AnimatePresence>
-                {aiLabels.map((label, i) => (
-                  <motion.div 
-                    key={i}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className="px-6 py-3 glass rounded-2xl border-rehab-cyan/30 flex items-center gap-3 shadow-[0_0_20px_rgba(6,182,212,0.2)]"
-                  >
-                    <div className="w-2 h-2 rounded-full bg-rehab-cyan animate-pulse shadow-[0_0_10px_#06b6d4]" />
-                    <span className="text-xs font-bold text-white uppercase tracking-widest">{label}</span>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-              
-              <div className="px-6 py-3 glass rounded-2xl border-white/10 flex items-center gap-3">
-                <Mic size={16} className={isVoiceActive ? "text-rehab-cyan animate-pulse" : "text-white/20"} />
-                <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Voice Coach Active</span>
-              </div>
-            </div>
-
-            <div className="absolute top-8 right-8">
-              <div className="glass p-6 rounded-3xl border-white/10 text-center min-w-[120px]">
-                <div className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Reps</div>
-                <div className="text-4xl font-bold text-white font-display">{reps} <span className="text-sm text-white/20">/ {selectedExercise.reps}</span></div>
-              </div>
-            </div>
-
-            <div className="absolute bottom-32 left-1/2 -translate-x-1/2 w-full max-w-md px-8">
-              <div className="glass p-6 rounded-3xl border-white/10 flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-rehab-cyan/20 flex items-center justify-center text-rehab-cyan">
-                  <Info size={20} />
+            <div className="absolute top-8 right-8 max-w-xs">
+              <motion.div 
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="bg-slate-950/80 backdrop-blur-md p-6 rounded-3xl border border-white/10 space-y-3"
+              >
+                <div className="flex items-center gap-3 text-teal-400">
+                  <BrainCircuit size={20} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest font-sans">AI Guidance</span>
                 </div>
-                <div>
-                  <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-0.5">AI Tip</p>
-                  <p className="text-xs text-white font-medium">{feedback}</p>
-                </div>
-              </div>
+                <p className="text-sm text-white font-display leading-tight">{feedback}</p>
+              </motion.div>
             </div>
           </div>
         </div>
